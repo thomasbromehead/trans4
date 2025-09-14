@@ -952,8 +952,12 @@ end
 #      "https://api.trans4x4.com:8444/images/PDS280106/ 1.png"
 
 # create_trans4_categories
-update_trans4
-# create_trans4_products
-obsolete_trans4
-# create_b2b_categories
-update_stock_levels
+begin
+  update_trans4
+  # create_trans4_products
+  obsolete_trans4
+  # create_b2b_categories
+  update_stock_levels
+ensure
+  [Dir["*.csv"], Dir["*.json"]].flatten.each { |f| FileUtils.rm(f)}
+end
