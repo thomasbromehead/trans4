@@ -129,7 +129,7 @@ def optimize(text, desc_type)
   rescue => e
     puts "ChatGPT Failure: #{e.message}"
     Resend::Emails.send({
-      "from": "toto@presta-smart.com",
+      "from": "tom@presta-smart.com",
       "to": "tom@tombrom.dev",
       "subject": "Erreur dans la méthode optimize impliquant chatGPT",
       "html":  "<span> This happened: #{e.message}</span>"
@@ -206,7 +206,7 @@ def delete_products(products, product_info, brand)
       <ul>#{product_info.join("<li>")}</ul>
     BLOCK
     Resend::Emails.send({
-      "from": "toto@presta-smart.com",
+      "from": "tom@presta-smart.com",
       "to": "tom@tombrom.dev",
       "subject": "#{deleted_products} produits du catalogue #{brand} sont à supprimer.",
       "html":  "Vous pouvez les retrouver dans la catégorie 'A supprimer' à la racine" + text
@@ -221,7 +221,7 @@ def translate_products(products, language)
     available_references_json_en = JSON.parse(File.open("catalogue-front-runner-#{language}-#{Time.now.day}-#{Time.now.month}-#{Time.now.year}.json").read)
   rescue JSON::ParserError => e
     Resend::Emails.send({
-      "from": "toto@presta-smart.com",
+      "from": "tom@presta-smart.com",
       "to": "tom@tombrom.dev",
       "subject": "Error parsing Front Runner catalogue",
       "html": "<p>#{e.message}</p>"
@@ -283,7 +283,7 @@ def translate_products(products, language)
           from    'lesalfistes@gmail.com'
           to      't_bromehead@yahoo.fr'
           cc 't_bromehead@yahoo.fr'
-          subject "MAJ Petromax: Erreur lors de la mise à jour de #{product["Name"]}"
+          subject "MAJ Trans4: Erreur lors de la mise à jour de #{product["Name"]}"
         
           text_part do
             body "Détail de l'erreur #{e.message} pour le produit #{product_id} ref #{product}. "
@@ -422,6 +422,7 @@ def update_trans4
       their_weight = p["poids"]
       unless our_weight == their_weight
         products_needing_update << {id: our_product_id, weight: their_weight}
+        products_needing_update_text << "#{our_product[:reference]}, #{our_product[:name][:language][0][:val]}. Leur poids: <span style='font-size:16px'>#{their_weight}</span>, Notre poids: <span style='font-size:16px'>#{our_weight}</span>" rescue ""
       end
       unless same_price
         # Update price
@@ -434,45 +435,43 @@ def update_trans4
     end
   end
   # Resend::Emails.send({
-  #   "from": "toto@presta-smart.com",
-  #   "to": "tom@tombrom.dev",
-  #   "subject": "#{needs_price_update} products need their price/weight/material or other updated",
-  #   "html":  "#{products_needing_update_text.uniq.join("<li>")}"
-  # })
-  # Resend::Emails.send({
-  #   "from": "toto@presta-smart.com",
+  #   "from": "tom@presta-smart.com",
   #   "to": "tom@tombrom.dev",
   #   "subject": "Price update needed",
   #   "html":  "We have #{trans4_products_we_have} of Trans4 products on our website"
   # })
-  #   Resend::Emails.send({
-  #   "from": "tom@presta-smart.com",
-  #   "to": "tom@tombrom.dev",
-  #   "subject": "Ref update needed",
-  #   "html":  "#{product_needing_ref_update} ont eu une mise à jour de référence"
-  # })
-  mail = Mail.new do
-    from    'lesalfistes@gmail.com'
-    to      'tom@tombrom.dev'
-    cc 'lesalfistes@gmail.com'
-    subject "#{product_needing_ref_update} produits Trans4 ont été mis à jour"
-  end
-  mail.deliver!
+  # mail = Mail.new do
+  #   from    'lesalfistes@gmail.com'
+  #   to      'tom@tombrom.dev'
+  #   cc 'lesalfistes@gmail.com'
+  #   subject "#{product_needing_ref_update} produits Trans4 ont été mis à jour"
+  # end
+  # mail.deliver!
   # 2nd loop:
   # Iterate on our products and find the refs
-  all_our_products = Prestashop::Mapper::Product.all(filter: {active: 1, id_manufacturer: 90})
+  teraflex = Prestashop::Mapper::Product.all(filter: {active: 1, id_manufacturer: 176})
+  core = Prestashop::Mapper::Product.all(filter: {active: 1, id_manufacturer: 158})
+  come_up = Prestashop::Mapper::Product.all(filter: {active: 1, id_manufacturer: 54})
+  pedders = Prestashop::Mapper::Product.all(filter: {active: 1, id_manufacturer: 30})
+  black_rhino = Prestashop::Mapper::Product.all(filter: {active: 1, id_manufacturer: 120})
+  avm = Prestashop::Mapper::Product.all(filter: {active: 1, id_manufacturer: 24})
+  snug = Prestashop::Mapper::Product.all(filter: {active: 1, id_manufacturer: 152})
+  kampa = Prestashop::Mapper::Product.all(filter: {active: 1, id_manufacturer: 160})
+  tmax = Prestashop::Mapper::Product.all(filter: {active: 1, id_manufacturer: 89})
+  lazer = Prestashop::Mapper::Product.all(filter: {active: 1, id_manufacturer: 76})
+  hofman = Prestashop::Mapper::Product.all(filter: {active: 1, id_manufacturer: 48})
+  rival =  Prestashop::Mapper::Product.all(filter: {active: 1, id_manufacturer: 90})
+  all_our_products = [*teraflex, *core, *come_up, *pedders, *black_rhino, *avm, *snug, *kampa, *tmax, *lazer, *hofman, *rival]
   nb_of_products = all_our_products.length
   all_our_trans4_products_in_their_catalogue = 0
-  needs_price_update_mtp4x4_to_trans4 = 0
+  # needs_price_update_mtp4x4_to_trans4 = 0
   not_found = []
   found_products = []
-  products_that_need_update = []
   all_our_products.each_with_index do |o_p, i|
     our_product = Prestashop::Mapper::Product.find(o_p)
+    product_brand = our_product[:manufacturer_name][:val]
     puts "Looking product #{i+1} of #{nb_of_products}"
     if our_product
-      next if our_product[:id_manufacturer] == 3
-      next if our_product[:id_manufacturer] == 95
       our_ref = our_product[:reference].to_s 
       next if our_ref.empty?
       # found_product = trans4_products.find { |p| p["sku"].include?(our_product[:reference].to_s) }
@@ -480,12 +479,15 @@ def update_trans4
       # unless found_product
       #   found_product = trans4_products.find { |p| p["sku"].include?(our_product[:reference].to_s) }
       # end
-      all_our_trans4_products_in_their_catalogue += 1 if found_product
-      if found_product.nil?
-        not_found << "#{our_product[:reference].to_s} : #{our_product[:name][:language][0][:val]}" rescue ""
-        next
+      brand_prefix = BRANDS[product_brand.upcase]
+      unless found_product
+        found_product = trans4_products.find { |p| p["sku"] == "#{brand_prefix}#{our_product[:reference].to_s}" }
+        unless found_product
+          not_found << "#{our_product[:reference].to_s} : #{our_product[:name][:language][0][:val]}" rescue ""
+          next
+        end
       end
-      puts "Found a Front Runner product" if our_product[:id_manufacturer] == 3
+      all_our_trans4_products_in_their_catalogue += 1 if found_product
       found_products << "#{found_product['sku']} : #{found_product['name']}"
       their_price_ht = found_product["prix"]
       if our_product[:reference].to_s.start_with?("HSP")
@@ -494,20 +496,27 @@ def update_trans4
       our_price_ht = (our_product[:price].to_f).round(2)
         # Compare prices
       same_price = our_price_ht == their_price_ht
-      our_weight = our_product[:weight]
+      our_weight = our_product[:weight].to_f
       their_weight = found_product["poids"]
       unless same_price
         # Update price
-        needs_price_update_mtp4x4_to_trans4 += 1
+        # needs_price_update_mtp4x4_to_trans4 += 1
         products_needing_update << {id: our_product[:id], price: their_price_ht}
         products_needing_update_text << "#{our_product[:reference]}, #{our_product[:name][:language][0][:val]}. Leur prix: <span style='font-size:16px'>#{their_price_ht}</span>, Notre prix: <span style='font-size:16px'>#{our_price_ht}</span>" rescue ""
       end
       unless our_weight == their_weight
         products_needing_update << {id: our_product[:id], weight: their_weight}
+        products_needing_update_text << "#{our_product[:reference]}, #{our_product[:name][:language][0][:val]}. Leur poids: <span style='font-size:16px'>#{their_weight}</span>, Notre poids: <span style='font-size:16px'>#{our_weight}</span>" rescue ""
       end
     end
   end
-  products_needing_update.each do |p|
+  Resend::Emails.send({
+    "from": "tom@presta-smart.com",
+    "to": "tom@tombrom.dev",
+    "subject": "#{products_needing_update.length} ont besoin d'une MAJ de prix ou poids",
+    "html":  "#{products_needing_update_text.uniq.join("<li>")}"
+  })
+  products_needing_update.uniq.each do |p|
     puts "updating product #{p}"
     if p.has_key?(:price)
       puts "price needs update"
@@ -534,13 +543,6 @@ def update_trans4
       Prestashop::Mapper::Product.update(p[:id], active: 1)
     end
   end
-  mail = Mail.new do
-    from    'lesalfistes@gmail.com'
-    to      'tom@tombrom.dev'
-    cc 'lesalfistes@gmail.com'
-    subject "#{products_needing_update.length} produits Trans4 ont été mis à jour"
-  end
-  mail.deliver!
 end
 
 def update_rival
@@ -606,7 +608,7 @@ def create_trans4_products
       build_args["id_manufacturer"] = brand
     else
       Resend::Emails.send({
-        "from": "toto@presta-smart.com",
+        "from": "tom@presta-smart.com",
         "to": "tom@tombrom.dev",
         "subject": "Création de marque nécessaire",
         "html":  "La marque #{p['marque']} doit être crée."
@@ -770,14 +772,14 @@ def create_trans4_products
             FileUtils.rm("./#{image_name}-#{i}") if File.exist?("#{image_name}-#{i}")
           rescue Prestashop::Api::RequestFailed => e
             # Resend::Emails.send({
-            #   "from": "toto@presta-smart.com",
+            #   "from": "tom@presta-smart.com",
             #   "to": "tom@tombrom.dev",
             #   "subject": "Erreur Prestashop lors de l'import du produit #{build_args["reference"]}",
             #   "html":  e.message
             # })
           rescue URI::InvalidURIError => e
             # Resend::Emails.send({
-            #   "from": "toto@presta-smart.com",
+            #   "from": "tom@presta-smart.com",
             #   "to": "web@trans4x4.com",
             #   "cc": "tom@tombrom.dev",
             #   "subject": "Erreur d'url pour une de vos images",
@@ -867,7 +869,7 @@ def obsolete_trans4
       end
     end
     # Resend::Emails.send({
-    #   "from": "toto@presta-smart.com",
+    #   "from": "tom@presta-smart.com",
     #   "to": "tom@tombrom.dev",
     #   "subject": "Catalogue Trans4: #{not_found.length} produits #{b["nom"]} potentiellement obsolètes",
     #   "html":  not_found.join("<li>"),
@@ -929,7 +931,7 @@ def update_stock_levels
       number_of_products_updated += 1
     rescue StandardError => e
       Resend::Emails.send({
-        "from": "toto@presta-smart.com",
+        "from": "tom@presta-smart.com",
         "to": "tom@tombrom.dev",
         "subject": "Erreur lors de la MAJ du stock Trans4",
         "html":  "<span>This happened #{e.message}</span>",
@@ -937,7 +939,7 @@ def update_stock_levels
     end
   end
   Resend::Emails.send({
-    "from": "toto@presta-smart.com",
+    "from": "tom@presta-smart.com",
     "to": "tom@tombrom.dev",
     "subject": "Stock Trans4: MAJ #{number_of_products_updated} produits. ",
     "html":  "#{number_of_products_updated} produits sur #{number_of_products} ont vu leur stock mis à jour"
@@ -954,5 +956,4 @@ update_trans4
 # create_trans4_products
 obsolete_trans4
 # create_b2b_categories
-update_rival
 update_stock_levels
