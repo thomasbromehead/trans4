@@ -404,7 +404,7 @@ def update_trans4
       if our_product_id
         puts "Found product with brand prefix"
         # Update reference, product was found with the help of the prefix
-        # Prestashop::Mapper::Product.update(our_product_id, reference: "#{brand_prefix}#{p['sku']}")
+        Prestashop::Mapper::Product.update(our_product_id, reference: "#{brand_prefix}#{p['sku']}")
         product_needing_ref_update += 1
       end
       # puts "Found Rival product: #{p['sku']}" if our_product_id
