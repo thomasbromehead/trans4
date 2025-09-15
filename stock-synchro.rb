@@ -132,7 +132,8 @@ def optimize(text, desc_type)
       "from": "tom@presta-smart.com",
       "to": "tom@tombrom.dev",
       "subject": "Erreur dans la méthode optimize impliquant chatGPT",
-      "html":  "<span> This happened: #{e.message}</span>"
+      "html":  "<span> This happened: #{e.message}</span>",
+      "text": "text"
     })
   end
 end
@@ -510,38 +511,42 @@ def update_trans4
       end
     end
   end
-  Resend::Emails.send({
-    "from": "tom@presta-smart.com",
-    "to": "tom@tombrom.dev",
-    "subject": "#{products_needing_update.length} ont besoin d'une MAJ de prix ou poids",
-    "html":  "#{products_needing_update_text.uniq.join("<li>")}"
-  })
-  products_needing_update.uniq.each do |p|
-    puts "updating product #{p}"
-    if p.has_key?(:price)
-      puts "price needs update"
-      Prestashop::Mapper::Product.update(p[:id], price: p[:price])
+  if products_needing_update.length >= 1
+    products_needing_update.uniq.each do |p|
+      puts "updating product #{p}"
+      if p.has_key?(:price)
+        puts "price needs update"
+        Prestashop::Mapper::Product.update(p[:id], price: p[:price])
+      end
+      if p.has_key?(:weight)
+        puts "weight needs update"
+        Prestashop::Mapper::Product.update(p[:id], weight: p[:weight])
+        # Update feature value 11
+        # Find weight if it already exists
+        # fv = Prestashop::Mapper::ProductFeatureValue.find_by(id_feature: 11, value: p[:weight].to_s)
+        # unless fv
+        #   # Create it if it doesn't
+        #   fv = Prestashop::Mapper::ProductFeatureValue.create(id_feature: 11, value: p[:weight].to_s, id_lang: 1)
+        # end
+        # Update Product to have this new feature
+        # Prestashop::Mapper::Product.update(p[:id], )
+      end
+      our_product = Prestashop::Mapper::Product.find(p[:id])
+      puts "found our product, checking to see whether it's active or not?"
+      puts our_product[:active]
+      if our_product[:active] == 0
+        puts 'Activating this product'
+        Prestashop::Mapper::Product.update(p[:id], active: 1)
+      end
     end
-    if p.has_key?(:weight)
-      puts "weight needs update"
-      Prestashop::Mapper::Product.update(p[:id], weight: p[:weight])
-      # Update feature value 11
-      # Find weight if it already exists
-      # fv = Prestashop::Mapper::ProductFeatureValue.find_by(id_feature: 11, value: p[:weight].to_s)
-      # unless fv
-      #   # Create it if it doesn't
-      #   fv = Prestashop::Mapper::ProductFeatureValue.create(id_feature: 11, value: p[:weight].to_s, id_lang: 1)
-      # end
-      # Update Product to have this new feature
-      # Prestashop::Mapper::Product.update(p[:id], )
-    end
-    our_product = Prestashop::Mapper::Product.find(p[:id])
-    puts "found our product, checking to see whether it's active or not?"
-    puts our_product[:active]
-    if our_product[:active] == 0
-      puts 'Activating this product'
-      Prestashop::Mapper::Product.update(p[:id], active: 1)
-    end
+    Resend::Emails.send({
+      "from": "tom@presta-smart.com",
+      "to": "tom@tombrom.dev",
+      "cc": "t_bromehead@yahoo.fr",
+      "subject": "#{products_needing_update.length} produits Trans4 ont été mis à jour",
+      "html":  "#{products_needing_update_text.uniq.join("<li>")}",
+      "text": "Some placeholder text here"
+    })
   end
 end
 
@@ -855,16 +860,17 @@ def obsolete_trans4
           product_on_their_side = available_products.find{ |p| p["sku"] == "PDS#{product_ref}" }
         end
         if product_on_their_side
-        else
-          not_found << ["#{product_ref}: #{product_hash[:name][:language][0][:val]}"]
-          current_categories = product_hash(:associations, :categories, :category)
+        else  
+          ref = product_hash[:name][:language][0][:val] rescue product_hash[:name][:language][:val]
+          not_found << ["#{product_ref}: #{ref}"]
+          current_categories = product_hash.dig(:associations, :categories, :category)
           if current_categories.is_a?(Array)
             new_categories = current_categories << {id: 2961} 
           else
             # Make it an array
             new_categories = [current_categories, {id: 2961}]
           end
-          Prestashop::Mapper::Product.update(id, associations: {categories: {attr: {nodetype: "category", api: "categories"}, category: new_categories}})
+          Prestashop::Mapper::Product.update(p, associations: {categories: {attr: {nodetype: "category", api: "categories"}, category: new_categories}})
         end
       end
     end
