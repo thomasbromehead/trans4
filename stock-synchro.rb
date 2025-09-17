@@ -10,6 +10,7 @@ require "chatgpt"
 require "deepl"
 require "rmagick"
 require "i18n"
+require "date"
 
 Dotenv.load()
 # require_relative "deleter"
@@ -947,7 +948,7 @@ def update_stock_levels
   Resend::Emails.send({
     "from": "tom@presta-smart.com",
     "to": "tom@tombrom.dev",
-    "subject": "Stock Trans4: MAJ #{number_of_products_updated} produits. ",
+    "subject": "Stock Trans4: MAJ #{number_of_products_updated} produits.",
     "html":  "#{number_of_products_updated} produits sur #{number_of_products} ont vu leur stock mis à jour"
   })
 end
@@ -961,7 +962,9 @@ end
 begin
   update_trans4
   # create_trans4_products
-  obsolete_trans4
+  if Date.today.day == 24
+    obsolete_trans4
+  end
   # create_b2b_categories
   update_stock_levels
 ensure
