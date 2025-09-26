@@ -948,6 +948,7 @@ def update_stock_levels
   Resend::Emails.send({
     "from": "tom@presta-smart.com",
     "to": "tom@tombrom.dev",
+    "cc": "contact@montpellier4x4.com",
     "subject": "Stock Trans4: MAJ #{number_of_products_updated} produits.",
     "html":  "#{number_of_products_updated} produits sur #{number_of_products} ont vu leur stock mis à jour"
   })
