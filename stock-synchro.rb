@@ -312,7 +312,7 @@ def translate_products(products, language)
 end
 
 def download_files
-  `curl -L 'https://api.trans4x4.com:8444/articles?itemsPerPage=5000' -o 'trans4-stock-#{Time.now.day}-#{Time.now.month}-#{Time.now.year}.json'` unless File.exist?("trans4-stock-#{Time.now.day}-#{Time.now.month}-#{Time.now.year}.json")
+`curl -L 'https://api.trans4x4.com:8444/articles?itemsPerPage=5000' -o 'trans4-stock-#{Time.now.day}-#{Time.now.month}-#{Time.now.year}.json'` unless File.exist?("trans4-stock-#{Time.now.day}-#{Time.now.month}-#{Time.now.year}.json")
 `curl -L 'https://api.trans4x4.com:8444/catalogues' -o 'trans4-categories-#{Time.now.day}-#{Time.now.month}-#{Time.now.year}.json'` unless File.exist?("trans4-categories-#{Time.now.day}-#{Time.now.month}-#{Time.now.year}.json")
 `curl -L 'https://api.trans4x4.com:8444/marques' -o 'trans4-brands-#{Time.now.day}-#{Time.now.month}-#{Time.now.year}.json'` unless File.exist?("trans4-brands-#{Time.now.day}-#{Time.now.month}-#{Time.now.year}.json")
 end
@@ -926,7 +926,15 @@ def update_stock_levels
       when "NC"
         quantity = 3
       else
-        quantity =  ap["stock"].to_i
+        if ap["stock"].to_i > 0
+          quantity = ap["stock"]
+          puts "------------"
+          puts "Using Stock"
+        else
+          quantity =  ap["stockMini"]
+          puts "-----------------"
+          puts "Using Stock Mini"
+        end
       end
       unless quantity == stock_available_object[:quantity]
         puts "Updating quantity from #{stock_available_object[:quantity]} to #{quantity}"
